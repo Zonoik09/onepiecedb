@@ -30,23 +30,27 @@ class ResponsiveHomePage extends StatefulWidget {
 }
 
 class _ResponsiveHomePageState extends State<ResponsiveHomePage> {
-  late String selectedGroup; // Usamos late y lo inicializamos más tarde
+  late String selectedGroup;
   List<String> groups = [];
   List<Map<String, dynamic>> members = [];
-  late Map<String, dynamic> selectedMember; // Usamos late y lo inicializamos más tarde
+  late Map<String, dynamic> selectedMember;
   bool showMembers = false;
 
   @override
   void initState() {
     super.initState();
     selectedGroup = '';
-    selectedMember = {}; // Inicializamos con un Map vacío para evitar valores nulos
+    selectedMember = {};
     fetchGroupsAndMembers();
   }
 
   Future<void> fetchGroupsAndMembers() async {
     try {
-      final response = await http.get(Uri.parse('http://localhost:3000/api/groups'));
+      final response = await http.post(
+        Uri.parse('http://localhost:3000/api/groups'),
+        headers: {"Content-Type": "application/json"},
+        body: json.encode({}), // Si el servidor no requiere datos en el cuerpo
+      );
 
       if (response.statusCode == 200) {
         setState(() {
@@ -60,16 +64,21 @@ class _ResponsiveHomePageState extends State<ResponsiveHomePage> {
     }
   }
 
+
   Future<void> fetchMembers(String group) async {
     try {
-      final response = await http.get(Uri.parse('http://localhost:3000/api/members/$group'));
+      final response = await http.post(
+        Uri.parse('http://localhost:3000/api/members'),
+        headers: {"Content-Type": "application/json"},
+        body: json.encode({'group': group}),
+      );
 
       if (response.statusCode == 200) {
         setState(() {
           List<dynamic> data = jsonDecode(response.body);
           members = data.map((item) => Map<String, dynamic>.from(item)).toList();
           selectedGroup = group;
-          selectedMember = {}; // Limpiar el miembro seleccionado
+          selectedMember = {};
           showMembers = true;
         });
       } else {
@@ -77,6 +86,21 @@ class _ResponsiveHomePageState extends State<ResponsiveHomePage> {
       }
     } catch (e) {
       print('Error: $e');
+    }
+  }
+
+  Future<void> fetchMemberImage(String imageName) async {
+    try {
+      final imageUrl = Uri.parse('http://localhost:3000/images/$imageName');
+      final response = await http.get(imageUrl);
+
+      if (response.statusCode == 200) {
+        // Aquí puedes hacer algo con la imagen, si es necesario
+      } else {
+        print('Error fetching image: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching image: $e');
     }
   }
 
@@ -113,7 +137,7 @@ class _ResponsiveHomePageState extends State<ResponsiveHomePage> {
           onTap: () {
             setState(() {
               showMembers = false;
-              selectedMember = {}; // Limpiar el personaje seleccionado
+              selectedMember = {};
             });
           },
         ),
@@ -127,7 +151,7 @@ class _ResponsiveHomePageState extends State<ResponsiveHomePage> {
                 trailing: const Icon(Icons.arrow_forward),
                 onTap: () {
                   setState(() {
-                    selectedMember = member; // Establecer el personaje seleccionado
+                    selectedMember = member;
                     showMembers = false;
                   });
                 },
@@ -145,12 +169,12 @@ class _ResponsiveHomePageState extends State<ResponsiveHomePage> {
           title: const Text('Back to members'),
           onTap: () {
             setState(() {
-              selectedMember = {}; // Limpiar la selección del personaje
+              selectedMember = {};
               showMembers = true;
             });
           },
         ),
-        Expanded(child: _buildMemberDetails(selectedMember)), // Muestra los detalles del personaje
+        Expanded(child: _buildMemberDetails(selectedMember)),
       ],
     )
         : ListView.builder(
@@ -172,7 +196,6 @@ class _ResponsiveHomePageState extends State<ResponsiveHomePage> {
   Widget _buildDesktopLayout(BuildContext context, double screenWidth) {
     return Row(
       children: [
-        // Left panel (1/4 de la pantalla)
         Container(
           width: screenWidth / 4,
           color: Colors.grey[100],
@@ -180,7 +203,6 @@ class _ResponsiveHomePageState extends State<ResponsiveHomePage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Dropdown centrado (el dropdown es como un ComboBox)
               DropdownButton<String>(
                 value: selectedGroup.isNotEmpty ? selectedGroup : null,
                 hint: const Text('Select group'),
@@ -192,13 +214,12 @@ class _ResponsiveHomePageState extends State<ResponsiveHomePage> {
                     setState(() {
                       selectedGroup = newValue;
                       fetchMembers(newValue);
-                      selectedMember = {}; // Limpiar el personaje seleccionado
+                      selectedMember = {};
                     });
                   }
                 },
               ),
               const SizedBox(height: 30),
-              // ListView
               Expanded(
                 child: ListView.builder(
                   itemCount: members.length,
@@ -208,7 +229,7 @@ class _ResponsiveHomePageState extends State<ResponsiveHomePage> {
                       title: Text(member['name']),
                       onTap: () {
                         setState(() {
-                          selectedMember = member; // Establecer el personaje seleccionado
+                          selectedMember = member;
                         });
                       },
                     );
@@ -218,7 +239,6 @@ class _ResponsiveHomePageState extends State<ResponsiveHomePage> {
             ],
           ),
         ),
-        // Right panel (2/3 de la pantalla)
         Expanded(
           child: Container(
             color: Colors.white,
@@ -230,15 +250,13 @@ class _ResponsiveHomePageState extends State<ResponsiveHomePage> {
                 style: TextStyle(fontSize: 18, color: Colors.grey),
               ),
             )
-                : _buildMemberDetails(selectedMember), // Muestra los detalles si hay un personaje seleccionado
+                : _buildMemberDetails(selectedMember),
           ),
         ),
       ],
     );
   }
 
-
-  // Widget que muestra los detalles
   Widget _buildMemberDetails(Map<String, dynamic> member) {
     String imageUrl = 'http://localhost:3000/images/${member['image']}';
 
