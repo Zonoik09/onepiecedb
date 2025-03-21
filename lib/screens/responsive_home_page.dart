@@ -31,16 +31,20 @@ class _ResponsiveHomePageState extends State<ResponsiveHomePage> {
         title: const Text(
           'One Piece DB',
           style: TextStyle(
-            color: Colors.red,
-            fontSize: 50,
+            color: Colors.white,
+            fontSize: 40,
             fontWeight: FontWeight.bold,
+            fontFamily: 'PirataOne',
           ),
         ),
         centerTitle: true,
-        backgroundColor: const Color(0xFFFFD700),
+        backgroundColor: const Color(0xFFDAA520),
+        elevation: 8,
+        shadowColor: Colors.black54,
       ),
+      backgroundColor: const Color(0xFFFFF3CD),
       body: groupProvider.groups.isEmpty
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: Colors.red))
           : isMobile
               ? _buildMobileLayout(context, groupProvider)
               : _buildDesktopLayout(context, groupProvider, screenWidth),
@@ -48,56 +52,85 @@ class _ResponsiveHomePageState extends State<ResponsiveHomePage> {
   }
 
   Widget _buildMobileLayout(BuildContext context, GroupProvider groupProvider) {
-    return groupProvider.showMembers
+    return groupProvider.selectedMember.isNotEmpty
         ? Column(
             children: [
               ListTile(
-                leading: const Icon(Icons.arrow_back),
-                title: const Text('Back to groups'),
+                leading: const Icon(Icons.arrow_back, color: Colors.red),
+                title: const Text('Back to members',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
                 onTap: () {
                   setState(() {
-                    groupProvider.showMembers = false;
                     groupProvider.selectedMember = {};
                   });
                 },
               ),
               Expanded(
-                child: ListView.builder(
-                  itemCount: groupProvider.members.length,
-                  itemBuilder: (context, index) {
-                    final member = groupProvider.members[index];
-                    return ListTile(
-                      title: Text(member['name']),
-                      trailing: const Icon(Icons.arrow_forward),
-                      onTap: () {
-                        setState(() {
-                          groupProvider.selectedMember = member;
-                          groupProvider.showMembers = false;
-                        });
-                      },
-                    );
-                  },
-                ),
-              ),
+                  child: _buildMemberDetails(groupProvider.selectedMember)),
             ],
           )
-        : ListView.builder(
-            padding: const EdgeInsets.all(16.0),
-            itemCount: groupProvider.groups.length,
-            itemBuilder: (context, index) {
-              final group = groupProvider.groups[index];
-              return ListTile(
-                title: Text(group),
-                trailing: const Icon(Icons.arrow_forward),
-                onTap: () {
-                  groupProvider.fetchMembers(group);
-                  setState(() {
-                    groupProvider.showMembers = true;
-                  });
+        : (groupProvider.showMembers
+            ? Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.arrow_back, color: Colors.red),
+                    title: const Text('Back to groups',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    onTap: () {
+                      setState(() {
+                        groupProvider.showMembers = false;
+                      });
+                    },
+                  ),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: groupProvider.members.length,
+                      itemBuilder: (context, index) {
+                        final member = groupProvider.members[index];
+                        return Card(
+                          color: Colors.white,
+                          margin: const EdgeInsets.all(10),
+                          child: ListTile(
+                            title: Text(member['name'],
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold)),
+                            trailing: const Icon(Icons.arrow_forward,
+                                color: Colors.red),
+                            onTap: () {
+                              setState(() {
+                                groupProvider.selectedMember = member;
+                              });
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              )
+            : ListView.builder(
+                padding: const EdgeInsets.all(16.0),
+                itemCount: groupProvider.groups.length,
+                itemBuilder: (context, index) {
+                  final group = groupProvider.groups[index];
+                  return Card(
+                    color: Colors.white,
+                    margin: const EdgeInsets.symmetric(vertical: 10),
+                    child: ListTile(
+                      title: Text(group,
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                      trailing:
+                          const Icon(Icons.arrow_forward, color: Colors.red),
+                      onTap: () {
+                        groupProvider.fetchMembers(group);
+                        setState(() {
+                          groupProvider.showMembers = true;
+                        });
+                      },
+                    ),
+                  );
                 },
-              );
-            },
-          );
+              ));
   }
 
   Widget _buildDesktopLayout(
@@ -106,38 +139,60 @@ class _ResponsiveHomePageState extends State<ResponsiveHomePage> {
       children: [
         Container(
           width: screenWidth / 4,
-          color: Colors.grey[100],
+          color: Colors.black87,
           padding: const EdgeInsets.all(16.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
+              const Text('Select Group',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
               DropdownButton<String>(
+                dropdownColor: Colors.black,
                 value: groupProvider.selectedGroup.isNotEmpty
                     ? groupProvider.selectedGroup
                     : null,
-                hint: const Text('Select group'),
+                hint: const Text(
+                  'Select group',
+                  style: TextStyle(color: Colors.white),
+                ),
                 items: groupProvider.groups.map((String value) {
                   return DropdownMenuItem<String>(
-                      value: value, child: Text(value));
+                    value: value,
+                    child: Text(
+                      value,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  );
                 }).toList(),
                 onChanged: (newValue) {
                   if (newValue != null) {
                     groupProvider.fetchMembers(newValue);
                   }
                 },
+                style: const TextStyle(color: Colors.white),
+                iconEnabledColor: Colors.white,
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 20),
               Expanded(
                 child: ListView.builder(
                   itemCount: groupProvider.members.length,
                   itemBuilder: (context, index) {
                     final member = groupProvider.members[index];
-                    return ListTile(
-                      title: Text(member['name']),
-                      onTap: () {
-                        groupProvider.selectedMember = member;
-                        groupProvider.notifyListeners();
-                      },
+                    return Card(
+                      color: Colors.white,
+                      child: ListTile(
+                        title: Text(member['name'],
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold)),
+                        onTap: () {
+                          groupProvider.selectedMember = member;
+                          groupProvider.notifyListeners();
+                        },
+                      ),
                     );
                   },
                 ),
@@ -152,7 +207,7 @@ class _ResponsiveHomePageState extends State<ResponsiveHomePage> {
             child: groupProvider.selectedMember.isEmpty
                 ? const Center(
                     child: Text(
-                      'Details will be shown here.',
+                      'Select a character to view details',
                       style: TextStyle(fontSize: 18, color: Colors.grey),
                     ),
                   )
@@ -165,39 +220,63 @@ class _ResponsiveHomePageState extends State<ResponsiveHomePage> {
 }
 
 Widget _buildMemberDetails(Map<String, dynamic> member) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.center,
-    children: [
-      Image.network(
-        'http://localhost:3000/images/${member['image']}',
-        height: 200,
+  return Card(
+    elevation: 5,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+    color: Colors.amber[100],
+    shadowColor: Colors.black,
+    child: Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Image.network(
+              'http://localhost:3000/images/${member['image']}',
+              height: 350,
+              fit: BoxFit.cover,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            member['name'],
+            style: const TextStyle(
+                fontSize: 26, fontWeight: FontWeight.bold, color: Colors.red),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            member['description'],
+            style: const TextStyle(fontSize: 18, fontStyle: FontStyle.italic),
+            textAlign: TextAlign.center,
+          ),
+          const Divider(thickness: 1, color: Colors.black54),
+          const SizedBox(height: 10),
+          _buildInfoRow("💰 Bounty:", member['bounty']),
+          _buildInfoRow("🏴‍☠️ Crew:", member['crew']),
+          _buildInfoRow("⚔️ Weapon:", member['weapon']),
+        ],
       ),
-      const SizedBox(height: 16),
-      Text(
-        member['name'],
-        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-      ),
-      const SizedBox(height: 10),
-      Text(
-        member['description'],
-        style: const TextStyle(fontSize: 18),
-        textAlign: TextAlign.center,
-      ),
-      const SizedBox(height: 10),
-      Text(
-        "Bounty: ${member['bounty']}",
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-      ),
-      const SizedBox(height: 10),
-      Text(
-        "Crew: ${member['crew']}",
-        style: const TextStyle(fontSize: 16),
-      ),
-      const SizedBox(height: 10),
-      Text(
-        "Weapon: ${member['weapon']}",
-        style: const TextStyle(fontSize: 16),
-      ),
-    ],
+    ),
+  );
+}
+
+Widget _buildInfoRow(String label, String value) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4.0),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(width: 5),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 16),
+        ),
+      ],
+    ),
   );
 }

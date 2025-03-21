@@ -22,7 +22,6 @@ class GroupProvider extends ChangeNotifier {
 
       if (response.statusCode == 200) {
         groups = List<String>.from(json.decode(response.body));
-        print('Grupos obtenidos: $groups');
         notifyListeners();
       } else {
         print(
@@ -50,7 +49,6 @@ class GroupProvider extends ChangeNotifier {
         selectedGroup = group;
         selectedMember = {};
         showMembers = true;
-        print('Miembros de $group: $members');
         notifyListeners();
       } else {
         print(
